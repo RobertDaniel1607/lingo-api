@@ -1,3 +1,13 @@
 spring:
   application:
     name: lingo
+  datasource:
+    url: jdbc:postgresql://localhost:5433/${POSTGRES_DB:lingo}
+    username: ${POSTGRES_USER:lingo}
+    password: ${POSTGRES_PASSWORD:lingo}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
