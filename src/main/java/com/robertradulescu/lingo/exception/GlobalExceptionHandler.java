@@ -7,6 +7,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.robertradulescu.lingo.card.CardNotFoundException;
 
 // Con @RestControllerAdvice centralizo aquí el manejo de errores de TODA la API.
 // Así mis controladores quedan limpios y todas las respuestas de error tienen el mismo formato.
@@ -44,4 +45,14 @@ public class GlobalExceptionHandler {
         problem.setTitle("Error de validación");
         return problem;
     }
+
+    // Cuando piden una card que no existe: 404, no un 500 genérico.
+    @ExceptionHandler(CardNotFoundException.class)
+    public ProblemDetail handleCardNotFound(CardNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Recurso no encontrado");
+        return problem;
+    }
+
 }
