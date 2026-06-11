@@ -1,5 +1,8 @@
 package com.robertradulescu.lingo.card;
 
+import com.robertradulescu.lingo.deck.Deck;
+import com.robertradulescu.lingo.deck.DeckNotFoundException;
+import com.robertradulescu.lingo.deck.DeckRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,10 +14,15 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final CardMapper cardMapper;
+    // Necesito el repositorio de decks para asociar una card a su deck al crearla.
+    private final DeckRepository deckRepository;
 
-    public CardService(CardRepository cardRepository, CardMapper cardMapper) {
+    public CardService(CardRepository cardRepository,
+                       CardMapper cardMapper,
+                       DeckRepository deckRepository) {
         this.cardRepository = cardRepository;
         this.cardMapper = cardMapper;
+        this.deckRepository = deckRepository;
     }
 
     // Las operaciones que escriben van con @Transactional: si algo falla a mitad,
@@ -22,8 +30,22 @@ public class CardService {
     @Transactional
     public CardResponse create(CardCreateRequest request) {
         Card card = cardMapper.toEntity(request);
+        // Si el cliente indicó un deck, lo busco y lo asocio. Si no existe, devuelvo 404.
+        if (request.deckId() != null) {
+            Deck deck = deckRepository.findById(request.deckId())
+                    .orElseThrow(() -> new DeckNotFoundException(request.deckId()));
+            card.setDeck(deck);
+        }
         Card saved = cardRepository.save(card);
         return cardMapper.toResponse(saved);
+    }
+
+    // Devuelvo todas las cards de un deck. Una sola consulta gracias a findByDeckId.
+    @Transactional(readOnly = true)
+    public List<CardResponse> findByDeckId(UUID deckId) {
+        return cardRepository.findByDeckId(deckId).stream()
+                .map(cardMapper::toResponse)
+                .toList();
     }
 
     // Las de solo lectura las marco readOnly: optimiza y deja claro que no modifican nada.

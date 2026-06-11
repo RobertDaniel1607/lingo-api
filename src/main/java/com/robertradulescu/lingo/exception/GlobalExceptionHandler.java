@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.robertradulescu.lingo.card.CardNotFoundException;
+import com.robertradulescu.lingo.deck.DeckNotFoundException;
 
 // Con @RestControllerAdvice centralizo aquí el manejo de errores de TODA la API.
 // Así mis controladores quedan limpios y todas las respuestas de error tienen el mismo formato.
@@ -49,6 +50,15 @@ public class GlobalExceptionHandler {
     // Cuando piden una card que no existe: 404, no un 500 genérico.
     @ExceptionHandler(CardNotFoundException.class)
     public ProblemDetail handleCardNotFound(CardNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Recurso no encontrado");
+        return problem;
+    }
+
+    // Lo mismo para los decks: si no existe, 404.
+    @ExceptionHandler(DeckNotFoundException.class)
+    public ProblemDetail handleDeckNotFound(DeckNotFoundException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setTitle("Recurso no encontrado");

@@ -1,10 +1,14 @@
 package com.robertradulescu.lingo.card;
 
+import com.robertradulescu.lingo.deck.Deck;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,6 +43,12 @@ public class Card {
 
     @Column(name = "target_lang", nullable = false)
     private String targetLang;
+
+    // Muchas cards pueden apuntar a un mismo deck. La columna deck_id está en MI tabla.
+    // LAZY para no traer el deck entero cada vez que cargo una card.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deck_id")
+    private Deck deck;
 
     // Hibernate rellena esta fecha automáticamente al crear la fila.
     @CreationTimestamp
