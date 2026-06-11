@@ -10,6 +10,14 @@ services:
       - "5433:5432"
     volumes:
       - lingo_pgdata:/var/lib/postgresql/data
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    container_name: lingo-libretranslate
+    ports:
+      - "5000:5000"
+    environment:
+      - LT_LOAD_ONLY=es,en,ro,fr,de,it,pt
+
 
 volumes:
   lingo_pgdata:
