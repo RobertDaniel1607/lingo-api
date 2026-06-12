@@ -1,5 +1,8 @@
 package com.robertradulescu.lingo.translation;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -9,13 +12,24 @@ import org.springframework.web.client.RestClient;
 @Service
 public class TranslationService {
 
+    private static final Logger log = LoggerFactory.getLogger(TranslationService.class);
+
     private final RestClient libreTranslateClient;
 
     public TranslationService(RestClient libreTranslateClient) {
         this.libreTranslateClient = libreTranslateClient;
     }
 
+    // La clave combina texto + idioma origen + idioma destino: traducciones idénticas
+    // comparten entrada de caché. Si ya está cacheada, Spring NO ejecuta este método.
+    @Cacheable(value = "translations",
+            key = "#request.text() + '|' + #request.sourceLang() + '|' + #request.targetLang()")
     public TranslationResponse translate(TranslationRequest request) {
+        // Este log SOLO aparece en un cache MISS. Si la traducción ya estaba cacheada,
+        // este método no se ejecuta y no verás esta línea: así se demuestra que la caché funciona.
+        log.info("Cache MISS: traduciendo '{}' de {} a {}",
+                request.text(), request.sourceLang(), request.targetLang());
+
         // Transformo mi DTO al formato que espera LibreTranslate (su campo de texto se llama "q").
         LibreTranslateRequest ltRequest = new LibreTranslateRequest(
                 request.text(),
