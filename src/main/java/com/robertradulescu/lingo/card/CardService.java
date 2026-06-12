@@ -3,6 +3,7 @@ package com.robertradulescu.lingo.card;
 import com.robertradulescu.lingo.deck.Deck;
 import com.robertradulescu.lingo.deck.DeckNotFoundException;
 import com.robertradulescu.lingo.deck.DeckRepository;
+import com.robertradulescu.lingo.security.SecurityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,47 +26,47 @@ public class CardService {
         this.deckRepository = deckRepository;
     }
 
-    // Las operaciones que escriben van con @Transactional: si algo falla a mitad,
-    // se deshace todo. Lo pongo en el servicio, no en el controlador.
     @Transactional
     public CardResponse create(CardCreateRequest request) {
+        UUID userId = SecurityUtils.getCurrentUserId();
         Card card = cardMapper.toEntity(request);
-        // Si el cliente indicó un deck, lo busco y lo asocio. Si no existe, devuelvo 404.
+        // Marco la card como propiedad del usuario logueado.
+        card.setUserId(userId);
+        // Si indicó un deck, debe existir Y ser suyo (no puedo meter mi card en el deck de otro).
         if (request.deckId() != null) {
-            Deck deck = deckRepository.findById(request.deckId())
+            Deck deck = deckRepository.findByIdAndUserId(request.deckId(), userId)
                     .orElseThrow(() -> new DeckNotFoundException(request.deckId()));
             card.setDeck(deck);
         }
-        Card saved = cardRepository.save(card);
-        return cardMapper.toResponse(saved);
+        return cardMapper.toResponse(cardRepository.save(card));
     }
 
-    // Devuelvo todas las cards de un deck. Una sola consulta gracias a findByDeckId.
+    // Solo las cards del usuario que pertenecen al deck indicado.
     @Transactional(readOnly = true)
     public List<CardResponse> findByDeckId(UUID deckId) {
-        return cardRepository.findByDeckId(deckId).stream()
+        return cardRepository.findByDeckIdAndUserId(deckId, SecurityUtils.getCurrentUserId())
+                .stream()
                 .map(cardMapper::toResponse)
                 .toList();
     }
 
-    // Las de solo lectura las marco readOnly: optimiza y deja claro que no modifican nada.
     @Transactional(readOnly = true)
     public CardResponse findById(UUID id) {
-        Card card = cardRepository.findById(id)
+        Card card = cardRepository.findByIdAndUserId(id, SecurityUtils.getCurrentUserId())
                 .orElseThrow(() -> new CardNotFoundException(id));
         return cardMapper.toResponse(card);
     }
 
     @Transactional(readOnly = true)
     public List<CardResponse> findAll() {
-        return cardRepository.findAll().stream()
+        return cardRepository.findByUserId(SecurityUtils.getCurrentUserId()).stream()
                 .map(cardMapper::toResponse)
                 .toList();
     }
 
     @Transactional
     public CardResponse update(UUID id, CardUpdateRequest request) {
-        Card card = cardRepository.findById(id)
+        Card card = cardRepository.findByIdAndUserId(id, SecurityUtils.getCurrentUserId())
                 .orElseThrow(() -> new CardNotFoundException(id));
         card.setSourceText(request.sourceText());
         card.setTranslatedText(request.translatedText());
@@ -78,7 +79,8 @@ public class CardService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!cardRepository.existsById(id)) {
+        // Solo puedo borrar una card si existe Y es mía.
+        if (!cardRepository.existsByIdAndUserId(id, SecurityUtils.getCurrentUserId())) {
             throw new CardNotFoundException(id);
         }
         cardRepository.deleteById(id);

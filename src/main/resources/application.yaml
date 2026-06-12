@@ -14,3 +14,9 @@ spring:
 
 libretranslate:
   url: http://localhost:5000
+
+jwt:
+  # En producción este secreto iría en el .env. El valor por defecto es solo para desarrollo.
+  # Debe tener al menos 32 caracteres (HMAC-SHA256 lo exige).
+  secret: ${JWT_SECRET:clave-de-desarrollo-muy-larga-y-secreta-cambiar-en-produccion-1234}
+  expiration-ms: 3600000   # 1 hora (en milisegundos)

@@ -38,6 +38,10 @@ public class Deck {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    // Dueño del deck. Igual que en Card: guardo solo el id para filtrar por propietario.
+    @Column(name = "user_id")
+    private UUID userId;
+
     // Un deck tiene muchas cards. "mappedBy = deck" significa que la columna FK (deck_id)
     // vive en la tabla Card, no aquí. LAZY: las cards NO se cargan hasta que las pido
     // explícitamente. Esto es clave para el problema N+1 que veremos en este mismo paso.

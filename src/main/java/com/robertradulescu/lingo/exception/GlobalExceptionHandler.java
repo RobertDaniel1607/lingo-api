@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.robertradulescu.lingo.card.CardNotFoundException;
 import com.robertradulescu.lingo.deck.DeckNotFoundException;
+import com.robertradulescu.lingo.auth.EmailAlreadyUsedException;
+import com.robertradulescu.lingo.auth.InvalidCredentialsException;
 
 // Con @RestControllerAdvice centralizo aquí el manejo de errores de TODA la API.
 // Así mis controladores quedan limpios y todas las respuestas de error tienen el mismo formato.
@@ -62,6 +64,24 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setTitle("Recurso no encontrado");
+        return problem;
+    }
+
+    // Email ya registrado: 409 Conflict.
+    @ExceptionHandler(EmailAlreadyUsedException.class)
+    public ProblemDetail handleEmailUsed(EmailAlreadyUsedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Conflicto");
+        return problem;
+    }
+
+    // Login fallido: 401 Unauthorized.
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ProblemDetail handleBadCredentials(InvalidCredentialsException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setTitle("No autorizado");
         return problem;
     }
 

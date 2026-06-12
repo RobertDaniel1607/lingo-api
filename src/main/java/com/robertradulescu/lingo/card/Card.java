@@ -50,6 +50,11 @@ public class Card {
     @JoinColumn(name = "deck_id")
     private Deck deck;
 
+    // Dueño de la card. Guardo el id directamente (sin relación @ManyToOne a User)
+    // porque solo lo necesito para filtrar por propietario, no para navegar al usuario.
+    @Column(name = "user_id")
+    private UUID userId;
+
     // Hibernate rellena esta fecha automáticamente al crear la fila.
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
